@@ -19,6 +19,6 @@ const double KP = 0.3;
 const double KI = 0.1;
 const double KD = 0;
 
-#define DEBUG_SERIAL Serial3
-
+// #define DEBUG_SERIAL Serial3
+#define DEBUG_SERIAL Serial
 #endif //GSAAIO_DEFINES_H

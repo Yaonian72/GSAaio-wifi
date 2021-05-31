@@ -43,7 +43,10 @@ void AIOapp::airFlow(uint8_t speed) {
 }
 
 void AIOapp::printData(){
+    f_ctler.printData();
     sensorBoard.print();
+    // _comm_ser->println("123");
+    _dbg_ser->println();
 }
 
 void AIOapp::startsample(){

@@ -19,7 +19,7 @@ public:
 
     double getFlowRate();
 
-    void setFlowRate(double target);
+    void setFlowRate(double target);//setpoint
 
     void drivePump() const;
 

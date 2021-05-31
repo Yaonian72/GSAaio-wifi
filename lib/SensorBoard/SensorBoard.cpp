@@ -38,7 +38,6 @@ void SensorBoard::print() {
     for (double i : _voltage_data){
         _ser->print(i*0.001,7); _ser->print(",");
     }
-    _ser->println();
 }
 
 void SensorBoard::_setResolution() {

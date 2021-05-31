@@ -11,13 +11,11 @@ double FlowController::getFlowRate() {
     uint16_t rate;
 
     Wire.requestFrom(0x07, 2);    // request 6 bytes from slave device #8
-
     while (Wire.available()) { // slave may send less than requested
         byte b1 = Wire.read();
         byte b2 = Wire.read();// receive a byte as character
         rate = b1 << 8 | b2;
     }
-
     return rate;
 #else
     double vout = analogRead(FLOW_METER_IN) * 5 / 1024.0;
@@ -39,6 +37,7 @@ void FlowController::init(Pump *pump) {
 #ifdef FLOW_METER_ANALOG
     pinMode(FLOW_METER_IN, INPUT);
 #endif
+    Wire.begin();
     this->initPump(pump);
     this->controller.SetOutputLimits(0, 255); // if PWM
     this->setFlowRate(DEFAULT_FLOW_RATE); // set default flow rate

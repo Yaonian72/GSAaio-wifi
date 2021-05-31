@@ -39,10 +39,12 @@ class AIOapp {
             if (cur - last_release >= UPDATE_INTERVAL){
                 last_release = cur;
                 readSensor();
+                f_ctler.update();
                 if (Sample_flag && (sample_count >= 0)){
                     sampling();
                 }
                 printData();
+                pump.set_speed(50);//should be removed
             }
         }
         
@@ -54,6 +56,7 @@ class AIOapp {
         uint16_t sample_period = 0;
 
         // ELClient esp;
+        // ESPweb pidweb;
         Stream * _comm_ser;
         Stream * _dbg_ser;
 
@@ -61,7 +64,7 @@ class AIOapp {
         Valve valve_switch;
         Pump pump;
         FlowController f_ctler;
-        AppConfig p_speed = {30, 30};
+        AppConfig p_speed = {100, 100};
 
 };
 
