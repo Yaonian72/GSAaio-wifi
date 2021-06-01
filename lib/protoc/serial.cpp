@@ -19,9 +19,10 @@ void setNewMsgCallback(void (*cb)(void)) {
 
 void parseSerial()
 {
-    while(mySerial.available()) {
-        rxByte = mySerial.read();
-        // mySerial.println(rxByte,HEX);
+    while(Serial.available()) {
+        rxByte = Serial.read();
+        // Serial.println(rxByte,HEX);
+        Serial.println(rxByte);
         if (!ser_escape) {
             if (rxByte == '^') {
                 rxBuff.len = 0;
@@ -121,19 +122,19 @@ void sendMsgBuff(msgBuff *mb)
 {
   uint8_t csum = calcTX_CSum(mb);
   msgBuffAddByte(mb,csum);
-  mySerial.write('^');
+  Serial.write('^');
   for (uint16_t i = 0; i < mb->len; i++) {
     switch (mb->buff[i])
     {
       case '?':
       case '^':
       case '\n': 
-        mySerial.write('?');
+        Serial.write('?');
       default:
-        mySerial.write(mb->buff[i]);
+        Serial.write(mb->buff[i]);
     }
   }
-  mySerial.write('\n');
+  Serial.write('\n');
 }
 
 

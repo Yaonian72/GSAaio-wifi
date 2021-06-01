@@ -3,15 +3,31 @@
 
 extern SoftwareSerial mySerial;
 
-AIOapp::AIOapp(Stream *comm_ser, Stream *debug_ser):_comm_ser(comm_ser), _dbg_ser(debug_ser), sensorBoard(debug_ser){}
+AIOapp::AIOapp(Stream *comm_ser, Stream *debug_ser):_comm_ser(comm_ser), _dbg_ser(debug_ser), sensorBoard(debug_ser),pidweb(comm_ser,debug_ser){}
 
-void AIOapp::begin(){
+void AIOapp::begin(r_cb cb){
     sensorBoard.begin();
     valve_switch.begin(VALVE_SWITCH);
     pump.begin(PUMP);
     pump_speed(p_speed.airspeed);
     // startsample();
     f_ctler.init(&pump);
+    pidweb.begin(cb);
+}
+
+void AIOapp::update_pid() {
+    double a_kp = pidweb.get_air_kp();
+    double a_ki = pidweb.get_air_ki();
+    double a_kd = pidweb.get_air_kd();
+    AppConfig setpoint_speed = pidweb.get_setpoint_speed();
+    if(pidweb.get_valve_status()){
+        fragOn();
+    }else{
+        fragOff();
+    }
+    f_ctler.setPID(a_kp,a_ki,a_kd);
+    f_ctler.setFlowRate(setpoint_speed.airspeed);//TODO :double of float or int.
+
 }
 
 void AIOapp::readSensor() {

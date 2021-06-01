@@ -7,13 +7,11 @@
 #include "Valve.h"
 #include "Pump.h"
 #include "FlowController.h"
+#include "Pages.h"
 
 const uint32_t UPDATE_INTERVAL = 500;
 
-struct AppConfig{
-    uint8_t airspeed = 80;
-    uint8_t fragspeed = 80;
-};
+// extern struct AppConfig;
 
 class AIOapp {
 
@@ -23,11 +21,12 @@ class AIOapp {
         void readSensor();
         void fragOn();
         void fragOff();
-        void begin();
+        void begin(r_cb cb);
 
         void startsample();
         void stopsample();
         void sampling();
+        void update_pid();
 
         void pump_speed(uint8_t speed);
         void fragFlow(uint8_t speed);
@@ -44,9 +43,11 @@ class AIOapp {
                     sampling();
                 }
                 printData();
-                pump.set_speed(50);//should be removed
+                pump.set_speed(30);//should be removed
             }
+            update_pid();
         }
+        ESPweb pidweb;
         
     private:
 
@@ -56,7 +57,7 @@ class AIOapp {
         uint16_t sample_period = 0;
 
         // ELClient esp;
-        // ESPweb pidweb;
+        
         Stream * _comm_ser;
         Stream * _dbg_ser;
 
