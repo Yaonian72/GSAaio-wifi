@@ -8,6 +8,8 @@
 #include "BaseSensorBoard.h"
 #include "Adafruit_ADS1015.h"
 #include "define.h"
+#include "Adafruit_HTU21DF.h"
+#include "Adafruit_BMP280.h"
 
 const uint8_t ADC_ADDRESS[] = {0x48, 0x49, 0x4a, 0x4b};
 const uint8_t ADC_NUM = 4;
@@ -24,9 +26,19 @@ public:
 
     void readVoltage();
     void readRaw();
-
+    void Byteprint(double f);
+    double get_voltagedata(uint8_t index);
 private:
     void _setResolution();
+
+    Adafruit_HTU21DF th_sensor = Adafruit_HTU21DF();
+    float _temperature;
+    float _humidity;
+
+    float _temperature2;
+    float _pressure;
+    float _altitude;
+    Adafruit_BMP280 bmp;
 
     Adafruit_ADS1115 adc_l[ADC_NUM];
     uint16_t _raw_data[4*ADC_NUM] = {0};

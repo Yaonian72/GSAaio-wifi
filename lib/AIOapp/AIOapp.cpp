@@ -1,18 +1,20 @@
 #include "AIOapp.h"
 #include "SoftwareSerial.h"
-
+#include <stdio.h>
+// #include <iostream>     
+// #include <sstream> 
 extern SoftwareSerial mySerial;
 
-AIOapp::AIOapp(Stream *comm_ser, Stream *debug_ser):_comm_ser(comm_ser), _dbg_ser(debug_ser), sensorBoard(debug_ser),pidweb(comm_ser,debug_ser){}
+AIOapp::AIOapp(Stream *comm_ser, Stream *debug_ser):_comm_ser(comm_ser), _dbg_ser(debug_ser), sensorBoard(comm_ser),pidweb(comm_ser,debug_ser){}
 
-void AIOapp::begin(r_cb cb){
+void AIOapp::begin(r_cb cb,wifi_cb wfcb,tcp_Cb tcpCb){
     sensorBoard.begin();
     valve_switch.begin(VALVE_SWITCH);
     pump.begin(PUMP);
     pump_speed(p_speed.airspeed);
     // startsample();
     f_ctler.init(&pump);
-    pidweb.begin(cb);
+    pidweb.begin(cb,wfcb,tcpCb);
 }
 
 void AIOapp::update_pid() {
@@ -62,7 +64,7 @@ void AIOapp::printData(){
     f_ctler.printData();
     sensorBoard.print();
     // _comm_ser->println("123");
-    _dbg_ser->println();
+    // _dbg_ser->println();
 }
 
 void AIOapp::startsample(){
@@ -97,3 +99,33 @@ void AIOapp::sampling(){
         stopsample();
     }
 }
+
+void AIOapp::voltage_data_update(){
+    for(int i = 0;i < 4*ADC_NUM;i++){
+        this->_vol_data[i] = 0.001*sensorBoard.get_voltagedata(i);
+        // _dbg_ser->print(_vol_data[i]);
+        // _dbg_ser->print(",");
+        }
+    // _dbg_ser->println();
+}
+
+void AIOapp::tcp_send_voltage_data(){
+    
+      char *str = (char *)malloc(1000);
+      int i;
+      float _f =0.54321;
+    //   sprintf(str+strlen(str), "%.6f,", _f); 
+      for( i=0;i<4*ADC_NUM;i++ )
+      {
+        // sprintf(str+strlen(str), "%.6f", _vol_data[i]); 
+        // ftoa(_vol_data[i], str+strlen(str), 4);
+        _dbg_ser->print(_vol_data[i]);
+      }
+      pidweb.tcp_send_voltage(str);
+      _dbg_ser->println("->");
+      _dbg_ser->println(str);
+      
+    // pidweb.tcp_send_voltage(str);
+    free(str);
+}
+

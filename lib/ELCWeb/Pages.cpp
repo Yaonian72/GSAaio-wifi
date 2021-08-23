@@ -1,17 +1,36 @@
 #include <Pages.h>
 
-ESPweb::ESPweb(Stream *comm_ser, Stream *debug_ser):esp(comm_ser),webServer(&esp),_dbg_ser(debug_ser),_comm_ser(comm_ser){}
+ESPweb::ESPweb(Stream *comm_ser, Stream *debug_ser):esp(comm_ser,debug_ser),webServer(&esp),esptcp(&esp),_dbg_ser(debug_ser),_comm_ser(comm_ser){}
 
-void ESPweb::begin(r_cb cb){
+void ESPweb::begin(r_cb cb,wifi_cb wfcb,tcp_Cb tcpCb){
+  esp.wifiCb.attach(wfcb);
   esp.resetCb = cb;
   esp.resetCb();
+  esp.GetWifiStatus();
+
+  _dbg_ser->print(F("Waiting for WiFi "));
+	if ((packet=esp.WaitReturn()) != NULL) {
+		_dbg_ser->print(F("."));
+		_dbg_ser->println(packet->value);
+	}
+	_dbg_ser->println("");
+
+  tcpConnNum = esptcp.begin(tcpServer, tcpPort, SOCKET_TCP_CLIENT, tcpCb); // SOCKET_CLIENT ==> we don't expect a response
+	if (tcpConnNum < 0) {
+		_dbg_ser->println(F("TCP socket setup failed, try again in 10 seconds after reboot"));
+		delay(10000);
+		// asm volatile ("  jmp 0");
+	} else {
+		_dbg_ser->println(String(tcpServer)+":"+String(tcpPort)+" is served over connection number # = "+String(tcpConnNum));
+	}
+  _dbg_ser->println(F("EL-TCP ready"));
 }
 
 
 void ESPweb::userSetFieldCb(char * field)
 {
   String fld = field;
-  _dbg_ser->println(fld);
+  // _dbg_ser->println(fld);
   if( fld == F("a_kp")){
     a_kp = (float)webServer.getArgFloat();}
   else if( fld == F("a_ki")){
@@ -59,13 +78,13 @@ void ESPweb::userLoadCb(char * url)
 void ESPweb::ButtonPressCb(char * btnId)
 {
   String id = btnId;
-//   _comm_ser->print(id);
+//   _dbg_ser->print(id);
   if( id == F("Valve_on") )
     v_status = 1;
   else if( id == F("Valve_off") )
     v_status = 0;
-//   _comm_ser->print(v_status);
-//   _comm_ser->println();
+//   _dbg_ser->print(v_status);
+//   _dbg_ser->println();
 }
 
 URLHandler *ESPweb::createURLH(){
@@ -80,7 +99,7 @@ void ESPweb::Byteprint(float f){
 
   for (std::size_t i = 0; i != sizeof(float); ++i)
   {
-      _comm_ser->print(p[i]);
+      _dbg_ser->print(p[i]);
   }
 }
 
@@ -94,29 +113,29 @@ void ESPweb::printloop(){
     // _dbg_ser->print(",");
     // _dbg_ser->println();
     
-    _comm_ser->print(a_ki);
-    _comm_ser->print(",");
-    _comm_ser->print(a_kp);
-    _comm_ser->print(",");
-    _comm_ser->print(a_kd);
-    _comm_ser->print(",");
-    _comm_ser->print(f_ki);
-    _comm_ser->print(",");
-    _comm_ser->print(f_kp);
-    _comm_ser->print(",");
-    _comm_ser->print(f_kd);
-    _comm_ser->print(",");
-    _comm_ser->print(p_speed.airspeed);
-    _comm_ser->print(",");
-    _comm_ser->print(p_speed.fragspeed);
-    _comm_ser->print(",");
-    _comm_ser->print(v_status);
+    _dbg_ser->print(a_ki);
+    _dbg_ser->print(",");
+    _dbg_ser->print(a_kp);
+    _dbg_ser->print(",");
+    _dbg_ser->print(a_kd);
+    _dbg_ser->print(",");
+    _dbg_ser->print(f_ki);
+    _dbg_ser->print(",");
+    _dbg_ser->print(f_kp);
+    _dbg_ser->print(",");
+    _dbg_ser->print(f_kd);
+    _dbg_ser->print(",");
+    _dbg_ser->print(p_speed.airspeed);
+    _dbg_ser->print(",");
+    _dbg_ser->print(p_speed.fragspeed);
+    _dbg_ser->print(",");
+    _dbg_ser->print(v_status);
     // Byteprint(ki);
-    // // _comm_ser->print(",");
+    // // _dbg_ser->print(",");
     // Byteprint(a_kp);
-    // // _comm_ser->print(",");
+    // // _dbg_ser->print(",");
     // Byteprint(a_kd);
-    _comm_ser->println();
+    _dbg_ser->println();
     delay(400);
 }
 
@@ -124,6 +143,30 @@ void ESPweb::printloop(){
 
 void ESPweb::process_esp(void){
   esp.Process();
+
+}
+
+void ESPweb::tcp_print(void){
+    if(wifiConnected) {
+    // Send message to the previously set-up server #1
+    Serial.print(F("Sending message to "));
+    Serial.print(tcpServer);
+    Serial.print(":");
+    Serial.println(tcpPort);
+    esptcp.send((char*)ss_test,sizeof(ss_test));
+	} 
+}
+
+// void ESPweb::tcp_send_voltage(float *data){
+//   if(wifiConnected) {
+//     esptcp.send((char*)data,sizeof(data));  
+//   } 
+// }
+
+void ESPweb::tcp_send_voltage(char *data){
+  if(wifiConnected) {
+    esptcp.send(data,sizeof(data));  
+  } 
 }
 
 boolean ESPweb::esp_Sync(uint32_t timeout){
@@ -166,3 +209,10 @@ AppConfig ESPweb::get_setpoint_speed(){
   return this->p_speed;
 }
 
+void ESPweb::wifi_Connection_status_true(){
+  this->wifiConnected = true;
+}
+
+void ESPweb::wifi_Connection_status_false(){
+  this->wifiConnected = false;
+}

@@ -21,7 +21,7 @@ class AIOapp {
         void readSensor();
         void fragOn();
         void fragOff();
-        void begin(r_cb cb);
+        void begin(r_cb cb,wifi_cb wfcb,tcp_Cb tcpCb);
 
         void startsample();
         void stopsample();
@@ -31,7 +31,8 @@ class AIOapp {
         void pump_speed(uint8_t speed);
         void fragFlow(uint8_t speed);
         void airFlow(uint8_t speed);
-
+        void voltage_data_update();
+        void tcp_send_voltage_data();
         void update(){
             //TODO : Interval
             unsigned long cur = millis();
@@ -42,19 +43,24 @@ class AIOapp {
                 if (Sample_flag && (sample_count >= 0)){
                     sampling();
                 }
+                voltage_data_update();
+                tcp_send_voltage_data();
                 printData();
                 pump.set_speed(30);//should be removed
+                // pidweb.tcp_print();
             }
             update_pid();
         }
+        
         ESPweb pidweb;
         
     private:
 
         unsigned long last_release = 0;
         bool Sample_flag;
-        int16_t sample_count = -1;
-        uint16_t sample_period = 0;
+        unsigned long sample_count = -1;
+        unsigned long sample_period = 0;
+        float _vol_data[4*ADC_NUM] = {0};
 
         // ELClient esp;
         
